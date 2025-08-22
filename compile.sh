@@ -8,8 +8,9 @@ if [ -f "/.dockerenv" ] || [ -f "/.dockerinit" ]; then
   make -j$(nproc)
 else
   if [ "$(docker inspect -f '{{.State.Running}}' "otb")" = "false" ]; then
-    docker start -a otb
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    sh "$SCRIPT_DIR/setup-and-run-docker.sh"
   else
-    echo "# Building already running on 'otb'"
+    echo " [#] Building already running on docker container"
   fi
 fi
