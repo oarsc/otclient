@@ -1,0 +1,8 @@
+Font
+  name: verdana-22px-rounded
+  texture: verdana-22px-rounded_cp1252_legacy
+  height: 32
+  glyph-size: 32 32
+  y-offset: -4
+  spacing: -2 -6
+  space-width: 8

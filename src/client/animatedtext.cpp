@@ -28,7 +28,7 @@
 
 AnimatedText::AnimatedText()
 {
-    m_cachedText.setFont(g_fonts.getFont("verdana-11px-rounded"));
+    m_cachedText.setFont(g_fonts.getFont("verdana-22px-rounded"));
     m_cachedText.setAlign(Fw::AlignLeft);
 }
 
@@ -46,7 +46,7 @@ void AnimatedText::drawText(const Point& dest, const Rect& visibleRect)
         p.x -= (4 * t / tf) + (8 * t * t / tftf);
     }
 
-    p.y += 8 + (-48 * t) / tf;
+    p.y += 8 + (-24 * t) / tf;
     p += m_offset;
     const Rect rect(p, textSize);
 
