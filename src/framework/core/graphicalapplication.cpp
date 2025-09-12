@@ -135,6 +135,8 @@ void GraphicalApplication::run()
         }
 
         if (!m_frameCounter.canRefresh()) {
+            // sleeps to prevent busy-wait and stop high CPU usage
+            stdext::millisleep(1);
             continue;
         }
 
