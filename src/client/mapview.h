@@ -63,7 +63,7 @@ public:
     uint8 getLockedFirstVisibleFloor() { return m_lockedFirstVisibleFloor; }
     uint8 getCachedFirstVisibleFloor() { return m_cachedFirstVisibleFloor; }
     uint8 getCachedLastVisibleFloor() { return m_cachedLastVisibleFloor; }
-    uint8 getTileSize() { return m_tileSize; }
+    uint16 getTileSize() { return m_tileSize; }
 
     void lockFirstVisibleFloor(uint8 firstVisibleFloor);
     void unlockFirstVisibleFloor();
@@ -213,7 +213,6 @@ private:
 
     uint8 m_cachedFirstVisibleFloor{ SEA_FLOOR },
         m_cachedLastVisibleFloor{ SEA_FLOOR },
-        m_tileSize{ SPRITE_SIZE },
         m_floorMin{ 0 },
         m_floorMax{ 0 },
         m_antiAliasingMode;
@@ -224,7 +223,10 @@ private:
         m_fadeInTime{ 0 },
         m_fadeOutTime{ 0 },
         m_shadowFloorIntensity{ 0 },
-        m_scaleFactor{ 1.f };
+        m_scaleFactor{ 1.f },
+        m_antialiasScale{ 1.f };
+
+    uint16 m_tileSize{ SPRITE_SIZE };
 
     Rect m_rectDimension;
 

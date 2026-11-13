@@ -94,8 +94,13 @@ public:
     uint8 getIcon() { return m_icon; }
     bool isPassable() { return m_passable; }
     uint64 getStepDuration(bool ignoreDiagonal = false, Otc::Direction dir = Otc::InvalidDirection);
-    Point getDrawOffset();
-    Point getWalkOffset() { return m_walkOffset; }
+    Point getDrawOffset(float scaleFactor = 1.f);
+    Point getWalkOffsetPixels(float scaleFactor = 1.f) const
+    {
+        return { static_cast<int>(std::lround(m_walkOffset.x * scaleFactor)),
+                 static_cast<int>(std::lround(m_walkOffset.y * scaleFactor)) };
+    }
+    PointF getWalkOffset() { return m_walkOffset; }
     PointF getJumpOffset() { return m_jumpOffset; }
     Position getLastStepFromPosition() { return m_lastStepFromPosition; }
     Position getLastStepToPosition() { return m_lastStepToPosition; }
@@ -138,12 +143,12 @@ public:
     void onDisappear() override;
     virtual void onDeath();
 
-    int getWalkedPixel() const { return m_walkedPixels; }
+    int getWalkedPixel() const { return static_cast<int>(std::lround(m_walkedPixels)); }
 
 protected:
     void updateWalkingTile();
     virtual void updateWalkAnimation();
-    virtual void updateWalkOffset(int totalPixelsWalked);
+    virtual void updateWalkOffset(float totalPixelsWalked);
     virtual void updateWalk(bool isPreWalking = false);
     virtual void nextWalkUpdate();
     virtual void terminateWalk();
@@ -193,7 +198,7 @@ protected:
 
     // walk related
     int m_walkAnimationPhase{ 0 };
-    int m_walkedPixels{ 0 };
+    float m_walkedPixels{ 0.f };
     uint m_footStep{ 0 };
     Timer m_walkTimer;
     Timer m_footTimer;
@@ -203,7 +208,7 @@ protected:
     ScheduledEventPtr m_walkUpdateEvent;
     ScheduledEventPtr m_walkFinishAnimEvent;
     EventPtr m_disappearEvent;
-    Point m_walkOffset;
+    PointF m_walkOffset;
     Otc::Direction m_walkTurnDirection{ Otc::InvalidDirection };
     Otc::Direction m_lastStepDirection{ Otc::InvalidDirection };
     Position m_lastStepFromPosition;

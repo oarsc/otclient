@@ -33,6 +33,8 @@
 #include <framework/graphics/texture.h>
 #include <framework/otml/otml.h>
 
+#include <cmath>
+
 void ThingType::serialize(const FileStreamPtr& fin)
 {
     for (int i = 0; i < ThingLastAttr; ++i) {
@@ -435,7 +437,18 @@ void ThingType::draw(const Point& dest, float scaleFactor, int layer, int xPatte
     const Point textureOffset = m_texturesFramesOffsets[animationPhase][frameIndex];
     const Rect textureRect = m_texturesFramesRects[animationPhase][frameIndex];
 
-    const Rect screenRect(dest + (textureOffset - m_displacement - (m_size.toPoint() - Point(1)) * SPRITE_SIZE) * scaleFactor, textureRect.size() * scaleFactor);
+    // Round both rectangle edges rather than truncating the scaled origin and
+    // width independently. Independent truncation can leave 1px gaps between
+    // neighboring sprite pieces when the map is drawn at a fractional scale.
+    const Point sourceOrigin = textureOffset - m_displacement - (m_size.toPoint() - Point(1)) * SPRITE_SIZE;
+    const Point screenOrigin(
+        static_cast<int>(std::lround(sourceOrigin.x * scaleFactor)),
+        static_cast<int>(std::lround(sourceOrigin.y * scaleFactor)));
+    const Point screenEnd(
+        static_cast<int>(std::lround((sourceOrigin.x + textureRect.width()) * scaleFactor)),
+        static_cast<int>(std::lround((sourceOrigin.y + textureRect.height()) * scaleFactor)));
+    const Size screenSize(screenEnd.x - screenOrigin.x, screenEnd.y - screenOrigin.y);
+    const Rect screenRect(dest + screenOrigin, screenSize);
 
     if (m_opacity < 1.0f)
         color = Color(1.0f, 1.0f, 1.0f, m_opacity);

@@ -30,7 +30,7 @@ LightView::LightView() : m_pool(g_drawPool.get<PoolFramed>(PoolType::LIGHT)) {}
 
 void LightView::setSmooth(bool enabled) { m_pool->setSmooth(enabled); }
 
-void LightView::resize(const Size& size, const uint8_t tileSize) { m_pool->resize(size * (m_tileSize = tileSize)); }
+void LightView::resize(const Size& size, const uint16_t tileSize) { m_pool->resize(size * (m_tileSize = tileSize)); }
 
 void LightView::addLightSource(const Point& pos, const Light& light)
 {
@@ -60,7 +60,7 @@ void LightView::draw(const Rect& dest, const Rect& src)
     for (auto& light : m_sources) {
         if (light.color) {
             const Color color = Color::from8bit(light.color, std::min<float>(light.opacity, light.intensity / 6.f));
-            const uint16 radius = light.intensity * m_tileSize;
+            const int radius = light.intensity * m_tileSize;
 
             g_drawPool.addTexturedRect(Rect(light.pos - radius, Size(radius * 2)), g_sprites.getLightTexture(), color);
             g_drawPool.setBlendEquation(Painter::BlendEquation_Max, g_drawPool.size());

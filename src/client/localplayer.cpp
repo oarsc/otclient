@@ -111,7 +111,7 @@ void LocalPlayer::cancelWalk(Otc::Direction direction)
     if (m_walking && m_preWalking)
         stopWalk();
 
-    g_map.notificateCameraMove(m_walkOffset);
+    g_map.notificateCameraMove(getWalkOffsetPixels());
 
     if (retryAutoWalk()) return;
 
@@ -203,7 +203,7 @@ void LocalPlayer::stopWalk()
     m_lastPrewalkDestination = {};
 }
 
-void LocalPlayer::updateWalkOffset(int totalPixelsWalked)
+void LocalPlayer::updateWalkOffset(float totalPixelsWalked)
 {
     if (!m_preWalking) {
         Creature::updateWalkOffset(totalPixelsWalked);

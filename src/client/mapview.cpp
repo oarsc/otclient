@@ -103,6 +103,28 @@ MapView::~MapView()
 
 void MapView::draw(const Rect& rect)
 {
+    // Render at the panel's native pixel density. Keep the selected
+    // antialiasing mode's supersampling factor on top of that resolution.
+    if (!rect.isEmpty() && !m_visibleDimension.isEmpty()) {
+        const float pixelsPerTile = std::max<float>(
+            rect.width() / static_cast<float>(m_visibleDimension.width()),
+            rect.height() / static_cast<float>(m_visibleDimension.height()));
+        const int maxTileSize = std::max<int>(SPRITE_SIZE,
+            std::min<int>(g_graphics.getMaxTextureSize() / (m_visibleDimension.width() + 3),
+                          g_graphics.getMaxTextureSize() / (m_visibleDimension.height() + 3)));
+        // Keep the world-to-framebuffer scale integral so the base outfit and
+        // its separately rendered color-mask layers stay pixel-aligned.
+        const int requestedScale = static_cast<int>(std::ceil(
+            pixelsPerTile * m_antialiasScale / SPRITE_SIZE));
+        const int maxScale = std::max<int>(1, maxTileSize / SPRITE_SIZE);
+        const int tileSize = std::clamp(requestedScale, 1, maxScale) * SPRITE_SIZE;
+        if (tileSize != m_tileSize) {
+            m_tileSize = static_cast<uint16>(tileSize);
+            m_scaleFactor = m_tileSize / static_cast<float>(SPRITE_SIZE);
+            updateGeometry(m_visibleDimension);
+        }
+    }
+
     // update visible tiles cache when needed
     if (m_mustUpdateVisibleTilesCache)
         updateVisibleTilesCache();
@@ -455,7 +477,7 @@ void MapView::updateVisibleTilesCache()
 
 void MapView::updateGeometry(const Size& visibleDimension)
 {
-    const uint8 tileSize = SPRITE_SIZE * m_scaleFactor;
+    const uint16 tileSize = m_tileSize;
     const Size drawDimension = visibleDimension + 3,
         bufferSize = drawDimension * tileSize;
 
@@ -602,7 +624,9 @@ void MapView::setAntiAliasingMode(const AntialiasingMode mode)
     g_drawPool.get<PoolFramed>(PoolType::MAP)
         ->setSmooth(mode != ANTIALIASING_DISABLED);
 
-    m_scaleFactor = mode == ANTIALIASING_SMOOTH_RETRO ? 2.f : 1.f;
+    m_antialiasScale = mode == ANTIALIASING_SMOOTH_RETRO ? 2.f : 1.f;
+    m_scaleFactor = m_antialiasScale;
+    m_tileSize = static_cast<uint16>(SPRITE_SIZE * m_antialiasScale);
 
     if (m_drawLights) m_lightView->setSmooth(mode != ANTIALIASING_DISABLED);
 
@@ -684,7 +708,7 @@ Rect MapView::calcFramebufferSource(const Size& destSize)
 {
     Point drawOffset = ((m_drawDimension - m_visibleDimension - Size(1)).toPoint() / 2) * m_tileSize;
     if (isFollowingCreature())
-        drawOffset += m_followingCreature->getWalkOffset() * m_scaleFactor;
+        drawOffset += m_followingCreature->getWalkOffsetPixels(m_scaleFactor);
     else if (!m_moveOffset.isNull())
         drawOffset += m_moveOffset * m_scaleFactor;
 

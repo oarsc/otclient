@@ -69,17 +69,18 @@ void Creature::draw(const Point& dest, float scaleFactor, bool animate, const Hi
         return;
 
     if (m_showTimedSquare) {
-        g_drawPool.addBoundingRect(Rect(dest + (m_walkOffset - getDisplacement() + 2) * scaleFactor, Size(28 * scaleFactor)), m_timedSquareColor, std::max<int>(static_cast<int>(2 * scaleFactor), 1));
+        g_drawPool.addBoundingRect(Rect(dest + getWalkOffsetPixels(scaleFactor) - getDisplacement() * scaleFactor + Point(2 * scaleFactor), Size(28 * scaleFactor)), m_timedSquareColor, std::max<int>(static_cast<int>(2 * scaleFactor), 1));
     }
 
     if (m_showStaticSquare) {
-        g_drawPool.addBoundingRect(Rect(dest + (m_walkOffset - getDisplacement()) * scaleFactor, Size(SPRITE_SIZE * scaleFactor)), m_staticSquareColor, std::max<int>(static_cast<int>(2 * scaleFactor), 1));
+        g_drawPool.addBoundingRect(Rect(dest + getWalkOffsetPixels(scaleFactor) - getDisplacement() * scaleFactor, Size(SPRITE_SIZE * scaleFactor)), m_staticSquareColor, std::max<int>(static_cast<int>(2 * scaleFactor), 1));
     }
 
-    internalDrawOutfit(dest + m_walkOffset * scaleFactor, scaleFactor, animate, textureType, m_direction, color);
+    const Point walkOffset = getWalkOffsetPixels(scaleFactor);
+    internalDrawOutfit(dest + walkOffset, scaleFactor, animate, textureType, m_direction, color);
 
     if (highLight.enabled && this == highLight.thing) {
-        internalDrawOutfit(dest + m_walkOffset * scaleFactor, scaleFactor, animate, TextureType::ALL_BLANK, m_direction, highLight.rgbColor);
+        internalDrawOutfit(dest + walkOffset, scaleFactor, animate, TextureType::ALL_BLANK, m_direction, highLight.rgbColor);
     }
 
     if (lightView) {
@@ -94,7 +95,7 @@ void Creature::draw(const Point& dest, float scaleFactor, bool animate, const Hi
         }
 
         if (light.intensity > 0) {
-            lightView->addLightSource(dest + (m_walkOffset + (Point(SPRITE_SIZE / 2))) * scaleFactor, light);
+            lightView->addLightSource(dest + walkOffset + Point(SPRITE_SIZE / 2) * scaleFactor, light);
         }
     }
 }
@@ -214,7 +215,7 @@ void Creature::drawInformation(const Rect& parentRect, const Point& dest, float 
     const auto creatureOffset = Point(16 - getDisplacementX(), -getDisplacementY() - 2);
 
     Point p = dest - drawOffset;
-    p += (getDrawOffset() + creatureOffset) * scaleFactor - Point(std::round(jumpOffset.x), std::round(jumpOffset.y));
+    p += getDrawOffset(scaleFactor) + creatureOffset * scaleFactor - Point(std::round(jumpOffset.x), std::round(jumpOffset.y));
     p.x *= horizontalStretchFactor;
     p.y *= verticalStretchFactor;
     p += parentRect.topLeft();
@@ -381,7 +382,7 @@ void Creature::updateJump()
     m_jumpOffset = PointF(height, height);
 
     if (isLocalPlayer()) {
-        g_map.notificateCameraMove(m_walkOffset);
+        g_map.notificateCameraMove(getWalkOffsetPixels());
     }
 
     int nextT = 0, diff = 0, i = 1;
@@ -421,7 +422,7 @@ void Creature::onAppear()
     }
 
     if (isLocalPlayer() && m_position != m_oldPosition) {
-        g_map.notificateCameraMove(m_walkOffset);
+        g_map.notificateCameraMove(getWalkOffsetPixels());
     }
 
     // creature appeared the first time or wasn't seen for a long time
@@ -501,7 +502,7 @@ void Creature::updateWalkAnimation()
     }
 }
 
-void Creature::updateWalkOffset(int totalPixelsWalked)
+void Creature::updateWalkOffset(float totalPixelsWalked)
 {
     m_walkOffset = {};
     if (m_direction == Otc::North || m_direction == Otc::NorthEast || m_direction == Otc::NorthWest)
@@ -520,8 +521,9 @@ void Creature::updateWalkingTile()
     // determine new walking tile
     TilePtr newWalkingTile;
 
-    const Rect virtualCreatureRect(SPRITE_SIZE + (m_walkOffset.x - getDisplacementX()),
-                                   SPRITE_SIZE + (m_walkOffset.y - getDisplacementY()),
+    const Point walkOffset = getWalkOffsetPixels();
+    const Rect virtualCreatureRect(SPRITE_SIZE + (walkOffset.x - getDisplacementX()),
+                                   SPRITE_SIZE + (walkOffset.y - getDisplacementY()),
                                    SPRITE_SIZE, SPRITE_SIZE);
 
     for (int xi = -1; xi <= 1 && !newWalkingTile; ++xi) {
@@ -557,7 +559,7 @@ void Creature::nextWalkUpdate()
     // do the update
     updateWalk();
     if (isLocalPlayer()) {
-        g_map.notificateCameraMove(m_walkOffset);
+        g_map.notificateCameraMove(getWalkOffsetPixels());
     }
 
     if (!m_walking) return;
@@ -577,10 +579,10 @@ void Creature::updateWalk(const bool isPreWalking)
     const float extraSpeed = isLocalPlayer() && !hasSpeedFormula() ? 800.f / static_cast<float>(stepDuration) : 0.f,
         walkTicksPerPixel = (stepDuration + extraSpeed) / SPRITE_SIZE;
 
-    const int totalPixelsWalked = std::min<int>((m_walkTimer.ticksElapsed() / walkTicksPerPixel), SPRITE_SIZE);
+    const float totalPixelsWalked = std::min<float>(m_walkTimer.ticksElapsed() / walkTicksPerPixel, SPRITE_SIZE);
 
     // needed for paralyze effect
-    m_walkedPixels = std::max<int>(m_walkedPixels, totalPixelsWalked);
+    m_walkedPixels = std::max(m_walkedPixels, totalPixelsWalked);
 
     updateWalkAnimation();
     updateWalkOffset(m_walkedPixels);
@@ -815,15 +817,15 @@ void Creature::updateShield()
         m_showShieldTexture = true;
 }
 
-Point Creature::getDrawOffset()
+Point Creature::getDrawOffset(float scaleFactor)
 {
     Point drawOffset;
     if (m_walking) {
         if (m_walkingTile)
-            drawOffset -= Point(m_walkingTile->getDrawElevation());
-        drawOffset += m_walkOffset;
+            drawOffset -= Point(m_walkingTile->getDrawElevation() * scaleFactor);
+        drawOffset += getWalkOffsetPixels(scaleFactor);
     } else if (const TilePtr& tile = getTile())
-        drawOffset -= Point(tile->getDrawElevation());
+        drawOffset -= Point(tile->getDrawElevation() * scaleFactor);
 
     return drawOffset;
 }
