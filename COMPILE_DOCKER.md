@@ -2,7 +2,8 @@
 
 Create the docker image by using the Dockerfile with:
 ```sh
-docker buildx build -t otbi -f Dockerfile.XXXX .
+docker buildx build -t otbi -f Dockerfile .
+tools/do
 ```
 
 ## Creating the container and building
@@ -26,16 +27,20 @@ docker stop otb
 
 ## Distrobox commands
 
+Create:
 ```sh
 distrobox create --name otb --image otbi --volume "$PWD:/otclient" --nvidia
+tools/dtb
 ```
 
-Compile
+Compile:
 ```sh
 distrobox enter otb -- /otclient/compile.sh
+tools/dtb /otclient/compile.sh
 ```
 
-Run
+Run:
 ```sh
 distrobox enter otb -- /otclient/build/otclient
+tools/dtb /otclient/build/otclient
 ```

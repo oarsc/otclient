@@ -86,31 +86,6 @@ client, instead otclient was designed to be a combination of a framework and tib
 
 [If you are interested in compiling this project, just go to the wiki.](https://github.com/mehah/otclient/wiki)
 
-### Build and run with Docker
-
-To build the image:
-
-```sh
-docker build -t edubart/otclient .
-```
-
-To run the built image:
-
-```sh
-# Disable access control for the X server.
-xhost +
-
-# Run the container image with the required bindings to the host devices and volumes.
-docker run -it --rm \
-  --env DISPLAY \
-  --volume /tmp/.X11-unix:/tmp/.X11-unix \
-  --device /dev/dri \
-  --device /dev/snd edubart/otclient /bin/bash
-
-# Enable access control for the X server.
-xhost -
-```
-
 ### Need help?
 
 Try to ask questions in [otland](http://otland.net/f494/), now we have a board for the project there,
